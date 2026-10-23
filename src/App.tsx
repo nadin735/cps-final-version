@@ -1,14 +1,30 @@
 import { useEffect, useState } from 'react'
 import type { Project, Task } from './types'
 import { dict, isRtl, Lang } from './i18n'
-import { getSession, getAccountDisplayName, logout } from './utils/account'
+import { WORKSPACE, purgeLegacyAccounts, deleteAllLocalData } from './utils/account'
 import { loadPortfolio, upsertProject, deleteProject, newProject } from './utils/portfolio'
-import LoginScreen from './components/LoginScreen'
+import { demoProjects } from './utils/demo'
+import LegalModal, { type LegalPage } from './components/LegalModal'
+import ConfirmDialog from './components/ConfirmDialog'
 import PortfolioDashboard from './components/PortfolioDashboard'
 import AddProjectModal from './components/AddProjectModal'
 import ProjectResultScreen from './components/ProjectResultScreen'
 
 const THEME_KEY = 'cps-theme-v1'
+
+const PORTFOLIO_URL = 'https://nadin.dev'
+const accountKey = WORKSPACE
+
+// Runs once per page load, before the first render reads storage.
+purgeLegacyAccounts()
+
+function readTheme(): 'night' | 'day' {
+  try {
+    return (localStorage.getItem(THEME_KEY) as 'night' | 'day') ?? 'night'
+  } catch {
+    return 'night'
+  }
+}
 
 const LANG_LABEL: Record<Lang, string> = { de: 'DE', en: 'EN', ar: 'AR' }
 
@@ -17,14 +33,10 @@ export default function App() {
   const t = dict[lang]
   const rtl = isRtl[lang]
 
-  const [theme, setTheme] = useState<'night' | 'day'>(
-    () => (localStorage.getItem(THEME_KEY) as 'night' | 'day') ?? 'night',
-  )
-  const [accountKey, setAccountKey] = useState<string | null>(() => getSession())
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const session = getSession()
-    return session ? loadPortfolio(session) : []
-  })
+  const [theme, setTheme] = useState<'night' | 'day'>(readTheme)
+  const [projects, setProjects] = useState<Project[]>(() => loadPortfolio(accountKey))
+  const [legalPage, setLegalPage] = useState<LegalPage | null>(null)
+  const [confirmWipe, setConfirmWipe] = useState(false)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
 
@@ -35,23 +47,13 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem(THEME_KEY, theme)
+    try {
+      localStorage.setItem(THEME_KEY, theme)
+    } catch {
+      /* private mode */
+    }
   }, [theme])
 
-  if (!accountKey) {
-    return (
-      <LoginScreen
-        t={t}
-        onLogin={(key) => {
-          setAccountKey(key)
-          setProjects(loadPortfolio(key))
-          setActiveProjectId(null)
-        }}
-      />
-    )
-  }
-
-  const displayName = getAccountDisplayName(accountKey)
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) ?? null : null
 
   const handleAddComplete = (tasks: Task[], targetProjectId: string | null, pdfName: string | null) => {
@@ -87,16 +89,27 @@ export default function App() {
 
   const handleDeleteProject = (id: string) => setProjects(deleteProject(accountKey, id))
 
+  const handleLoadDemo = () => {
+    let next = projects
+    for (const p of demoProjects()) next = upsertProject(accountKey, p)
+    setProjects(next)
+  }
+
+  const handleWipe = () => {
+    deleteAllLocalData()
+    setProjects([])
+    setActiveProjectId(null)
+    setConfirmWipe(false)
+  }
+
   return (
     <div className="min-h-screen scanlines">
       <header className="max-w-6xl mx-auto px-6 pt-10 pb-6 flex items-start justify-between gap-4 flex-wrap no-print">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full border border-gold-500 bg-field px-2 py-1 text-[11px] font-mono text-ink2">
-            {displayName}
-          </span>
-          <span className="text-[11px] font-mono text-ink3 underline cursor-pointer hover:text-gold-400" onClick={() => { logout(); setAccountKey(null) }}>
-            {t.logout}
-          </span>
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-ink">Critical Path Scanner</h1>
+          <a href={PORTFOLIO_URL} className="text-sm text-ink2 underline hover:text-gold-400">
+            ← {t.allTools}
+          </a>
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -138,11 +151,35 @@ export default function App() {
             projects={projects}
             onOpen={(id) => setActiveProjectId(id)}
             onAdd={() => setShowAddModal(true)}
+            onDemo={handleLoadDemo}
             onDelete={handleDeleteProject}
             t={t}
           />
         )}
       </main>
+
+      <footer className="max-w-6xl mx-auto px-6 pb-10 text-sm text-ink2 no-print">
+        <p className="mb-3">{t.localNote}</p>
+        <nav className="flex flex-wrap gap-x-5 gap-y-2">
+          <button className="underline hover:text-gold-400" onClick={() => setLegalPage('imprint')}>{t.imprint}</button>
+          <button className="underline hover:text-gold-400" onClick={() => setLegalPage('privacy')}>{t.privacy}</button>
+          <button className="underline hover:text-gold-400" onClick={() => setConfirmWipe(true)}>{t.deleteAllData}</button>
+          <a className="underline hover:text-gold-400" href={PORTFOLIO_URL}>{t.allTools}</a>
+        </nav>
+      </footer>
+
+      {legalPage && (
+        <LegalModal
+          page={legalPage}
+          appName="Critical Path Scanner"
+          localProcessing="Hochgeladene PDFs werden direkt in Ihrem Browser ausgelesen und nicht hochgeladen."
+          onClose={() => setLegalPage(null)}
+          t={t}
+        />
+      )}
+      {confirmWipe && (
+        <ConfirmDialog message={t.confirmDeleteAll} danger onConfirm={handleWipe} onCancel={() => setConfirmWipe(false)} t={t} />
+      )}
 
       {showAddModal && (
         <AddProjectModal projects={projects} onClose={() => setShowAddModal(false)} onComplete={handleAddComplete} t={t} />

@@ -9,6 +9,7 @@ interface Props {
   projects: Project[]
   onOpen: (id: string) => void
   onAdd: () => void
+  onDemo: () => void
   onDelete: (id: string) => void
   t: Dict
 }
@@ -81,7 +82,7 @@ export function StatusBadge({ tasks, cpm, t }: { tasks: Project['tasks']; cpm: R
   )
 }
 
-export default function PortfolioDashboard({ projects, onOpen, onAdd, onDelete, t }: Props) {
+export default function PortfolioDashboard({ projects, onOpen, onAdd, onDemo, onDelete, t }: Props) {
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('updated')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -164,6 +165,15 @@ export default function PortfolioDashboard({ projects, onOpen, onAdd, onDelete, 
           >
             {t.addProjectPlan}
           </button>
+          <div className="mt-4">
+            <button
+              onClick={onDemo}
+              className="px-5 py-2.5 text-sm border border-gold-500 text-gold-400 rounded hover:bg-gold-500 hover:text-inkOnGold font-semibold"
+            >
+              {t.demoButton}
+            </button>
+            <p className="text-xs text-ink3 mt-2">{t.demoHint}</p>
+          </div>
         </div>
       ) : (
         <div>
