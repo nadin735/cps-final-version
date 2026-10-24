@@ -12,7 +12,7 @@ import ProjectResultScreen from './components/ProjectResultScreen'
 
 const THEME_KEY = 'cps-theme-v1'
 
-const PORTFOLIO_URL = 'https://nadin.dev'
+const PORTFOLIO_URL = 'https://projektmanagement.nadin.dev'
 const accountKey = WORKSPACE
 
 // Runs once per page load, before the first render reads storage.
@@ -20,7 +20,7 @@ purgeLegacyAccounts()
 
 function readTheme(): 'night' | 'day' {
   try {
-    return (localStorage.getItem(THEME_KEY) as 'night' | 'day') ?? 'night'
+    return (sessionStorage.getItem(THEME_KEY) as 'night' | 'day') ?? 'night'
   } catch {
     return 'night'
   }
@@ -48,7 +48,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     try {
-      localStorage.setItem(THEME_KEY, theme)
+      sessionStorage.setItem(THEME_KEY, theme)
     } catch {
       /* private mode */
     }

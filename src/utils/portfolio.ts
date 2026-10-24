@@ -6,7 +6,7 @@ function portfolioKey(accountKey: string) {
 
 export function loadPortfolio(accountKey: string): Project[] {
   try {
-    const raw = localStorage.getItem(portfolioKey(accountKey))
+    const raw = sessionStorage.getItem(portfolioKey(accountKey))
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
@@ -14,7 +14,7 @@ export function loadPortfolio(accountKey: string): Project[] {
 }
 
 function savePortfolio(accountKey: string, projects: Project[]) {
-  localStorage.setItem(portfolioKey(accountKey), JSON.stringify(projects))
+  sessionStorage.setItem(portfolioKey(accountKey), JSON.stringify(projects))
 }
 
 export function upsertProject(accountKey: string, project: Project): Project[] {
