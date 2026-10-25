@@ -158,6 +158,7 @@ export default function PortfolioDashboard({ projects, onOpen, onAdd, onDemo, on
         <div className="text-center py-16">
           <div className="text-gold-500 text-3xl mb-3">▤</div>
           <p className="font-display text-lg font-semibold text-ink mb-2">{t.portfolioEmpty}</p>
+          <p className="text-sm text-ink2 max-w-xl mx-auto mb-3">{t.purposeLine}</p>
           <p className="text-sm text-ink3 max-w-md mx-auto mb-6">{t.portfolioEmptyHint}</p>
           <button
             onClick={onAdd}
@@ -174,6 +175,10 @@ export default function PortfolioDashboard({ projects, onOpen, onAdd, onDemo, on
             </button>
             <p className="text-xs text-ink3 mt-2">{t.demoHint}</p>
           </div>
+          <figure className="mt-10 max-w-3xl mx-auto text-left">
+            <figcaption className="text-xs font-mono text-ink3 mb-2">{t.previewTitle}</figcaption>
+            <img src="/preview.webp" alt={t.previewAlt} width={1200} height={500} loading="lazy" className="w-full h-auto rounded border border-line" />
+          </figure>
         </div>
       ) : (
         <div>
